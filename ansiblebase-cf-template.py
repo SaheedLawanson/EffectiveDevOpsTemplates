@@ -7,7 +7,15 @@ from troposphere import (
  Ref, Template,
 )
 
+ApplicationName = "helloworld"
 ApplicationPort = "3000"
+
+GithubAccount = "SaheedLawanson"
+GithubAnsibleURL = f"https://github.com/{GithubAccount}/ansible"
+
+AnsiblePullCmd = \
+    f"/usr/local/bin/ansible-pull -U {GithubAnsibleURL} {ApplicationName}.yaml"
+
 PublicCidrIp = str()
 ip_network(get('https://api.ipify.org').text)
 t = Template()
@@ -42,10 +50,10 @@ t.add_resource(ec2.SecurityGroup(
 
 ud = Base64(Join('\n', [
     "#!/bin/bash",
-    "sudo yum install --enablerepo=epel -y nodejs",
-    "wget http://bit.ly/2vESNuc -O /home/ec2-user/helloworld.js",
-    "wget http://bit.ly/2vVvT18 -O /etc/init/helloworld.conf",
-    "start helloworld"
+    "yum install --enablerepo=epel -y git",
+    "pip install ansible",
+    AnsiblePullCmd,
+    f"echo '*/10 * * * * {AnsiblePullCmd}' > etc/cron.d/ansible-pull"
 ]))
 
 t.add_resource(ec2.Instance(
